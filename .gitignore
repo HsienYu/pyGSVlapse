@@ -1,0 +1,9 @@
+/outputs/**
+**/__pycache__
+/tmp_outputs/**
+/Stitching.py
+/GUI.py
+/GoogleStreetViewDrivingSimulator.json
+/icon.icns
+/setup.py
+.DS_Store
