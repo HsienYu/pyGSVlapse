@@ -6,4 +6,7 @@
 /GoogleStreetViewDrivingSimulator.json
 /icon.icns
 /setup.py
+/lib
 .DS_Store
+.eggs
+.vscode
