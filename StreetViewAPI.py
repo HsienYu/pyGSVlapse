@@ -1,3 +1,4 @@
+from turtle import width
 from polyline.codec import PolylineCodec
 # from moviepy.editor import *
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -22,6 +23,8 @@ currentDir = os.getcwd()  # os.path.dirname(__file__)
 mediaDir = os.path.normpath(os.path.expanduser("~/Movies"))
 path_list = []
 clip_list = []
+
+_radius = 20
 
 
 def set_GOOGLE_STREETVIEW_API_KEY(KEY):
@@ -113,7 +116,6 @@ class StreetViewThread(threading.Thread):
                 heading = get_heading(coord, self.coordinates[idx + 3])
                 pitch = 0  # -10 9
                 pitch_shift = [-10, 9]
-                pitch_shift_index = 0  # tmp
                 fov = 40  # defualt 20 40
                 fov_shift = [20, 40]
                 fov_shift_index = 0  # tmp
@@ -143,7 +145,7 @@ class StreetViewThread(threading.Thread):
 
 def streetview_thread(coordinates, driveby="False", centercoord=(0, 0), height=0.0, position=0):
     # 20 is default number of threads "workers" unless the amount of images is less.
-    NumberOfThreads = 20
+    NumberOfThreads = _radius
     NumberOfThreads = (
         len(coordinates) if len(
             coordinates) < NumberOfThreads else NumberOfThreads
@@ -204,7 +206,7 @@ def make_stitchingVideo(path_List, save_path):
     final_clip.write_videofile(save_path + '/' + 'result.mp4')
     final_clip.close()
     clip_list.clear()
-    # crop(x1=0, y1=0, x2=1920, y2=600)
+    #crop(x1=0, y1=0, x2=1920, y2=600)
 
 
 def compare_frames(path_List):
@@ -254,11 +256,12 @@ def get_locationInfo(start, end):
     return location_info
 
 
-def construct_video(START, END):
+def construct_video(START, END, NUM_THREADS):
     # os.makedirs(currentDir + "/tmp_outputs", exist_ok=True)
     os.makedirs(os.path.join(currentDir, "tmp_outputs"), exist_ok=True)
     start = START  # input("Input Origin: ")
     end = END  # input("Input Destination: ")
+    _radius = NUM_THREADS
     print("Generating a drive time-lapse")
     location_list = get_locationInfo(eval(start), eval(end))
     # location_list = ['jp', 'osaka', 'jp', 'tokyo']

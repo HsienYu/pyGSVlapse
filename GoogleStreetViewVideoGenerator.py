@@ -13,7 +13,7 @@ THREAD_END = "-END-"
 res_data = ['1920x600', '1920x1200']
 
 
-def the_thread(window, s, e, k):
+def the_thread(window, s, e, k, r):
     """
     The thread that communicates with the application through the window's events.
 
@@ -21,7 +21,7 @@ def the_thread(window, s, e, k):
     """
     StreetViewAPI.set_GOOGLE_STREETVIEW_API_KEY(k)
     window.write_event_value(
-        THREAD_END, StreetViewAPI.construct_video(s, e))
+        THREAD_END, StreetViewAPI.construct_video(s, e, r))
 
 
 def main():
@@ -55,6 +55,8 @@ def main():
             key="-START-", focus=True, do_not_clear=True, font="Any 16")],
         [sg.T("終點座標： ", font="Any 16"), sg.Input(
             key="-END-", focus=True, do_not_clear=True, font="Any 16")],
+        [sg.T("半徑: ", font="Any 16"), sg.Input(
+            sg.user_settings_get_entry('-RADIUS-', ''), key="-R-", focus=True, do_not_clear=True, font="Any 16")],
         [sg.Button("Run", bind_return_key=True, font="Any 16"),
          sg.Button("Exit", font="Any 16")],
         [sg.T("下載完成檔案會儲存於Movies資料夾的StreetViewVideos中", font="Any 16")]
@@ -69,11 +71,13 @@ def main():
             break
         if event.startswith("Run"):
             sg.user_settings_set_entry('-APIKEY-', values["-API-"])
+            sg.user_settings_set_entry('-RADIUS-', values["-R-"])
             s = values["-START-"]
             e = values["-END-"]
             k = values["-API-"]
+            r = values["-R-"]
             threading.Thread(
-                target=the_thread, args=(window, s, e, k), daemon=True
+                target=the_thread, args=(window, s, e, k, r), daemon=True
             ).start()
         if event == THREAD_END:
             sg.cprint(f"下載圖資結束，請按下\"Exit\"鈕退出或是繼續下載", colors="white on green")
