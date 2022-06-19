@@ -21,7 +21,7 @@ def the_thread(window, s, e, k, r):
     """
     StreetViewAPI.set_GOOGLE_STREETVIEW_API_KEY(k)
     window.write_event_value(
-        THREAD_END, StreetViewAPI.construct_video(s, e, r))
+        THREAD_END, StreetViewAPI.construct_images(s, e, r))
 
 
 def main():

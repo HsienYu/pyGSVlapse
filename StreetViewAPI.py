@@ -19,8 +19,9 @@ import itertools
 import time
 
 
-currentDir = os.getcwd()  # os.path.dirname(__file__)
-mediaDir = os.path.normpath(os.path.expanduser("~/Movies"))
+# currentDir = os.getcwd()  # os.path.dirname(__file__)
+currentDir = os.path.normpath(os.path.expanduser("D:/GMap"))
+mediaDir = os.path.normpath(os.path.expanduser("D:/GMap"))
 path_list = []
 clip_list = []
 
@@ -92,7 +93,7 @@ def removeDir(path):
 
 
 class StreetViewThread(threading.Thread):
-    def __init__(self, coordinates, pointindex, centercoord, height, driveby, position):
+    def __init__(self, coordinates, pointindex, centercoord, height, driveby, position, pitch=0):
         threading.Thread.__init__(self)
         self.coordinates = coordinates
         self.pointindex = pointindex
@@ -101,6 +102,7 @@ class StreetViewThread(threading.Thread):
         self.centercoord = centercoord
         self.height = height
         self.position = position
+        self.pitch = pitch
 
     def run(self):
         for idx, coord in tuple(enumerate(self.coordinates))[:-3]:
@@ -114,7 +116,7 @@ class StreetViewThread(threading.Thread):
                 outfile.close()
 
                 heading = get_heading(coord, self.coordinates[idx + 3])
-                pitch = 0  # -10 9
+                pitch = self.pitch  # -10 9
                 pitch_shift = [-10, 9]
                 fov = 40  # defualt 20 40
                 fov_shift = [20, 40]
@@ -143,7 +145,7 @@ class StreetViewThread(threading.Thread):
                 os.unlink(outfile.name)
 
 
-def streetview_thread(coordinates, driveby="False", centercoord=(0, 0), height=0.0, position=0):
+def streetview_thread(coordinates, driveby="False", centercoord=(0, 0), height=0.0, position=0, pitch=0):
     # 20 is default number of threads "workers" unless the amount of images is less.
     NumberOfThreads = _radius
     NumberOfThreads = (
@@ -158,9 +160,8 @@ def streetview_thread(coordinates, driveby="False", centercoord=(0, 0), height=0
     threads = []
     for i in range(NumberOfThreads):
         t = StreetViewThread(
-            slicedlist[i], (len(slicedlist[0]) *
-                            i), centercoord, height, driveby, position
-        )
+            slicedlist[i], (len(slicedlist[0]) * i),
+            centercoord, height, driveby, position, pitch)
         threads.append(t)
         t.start()
     for t in threads:
@@ -185,9 +186,9 @@ def save_location(local_list):
     # print(currentDir)
     outputlocation = []
     outputlocation.append(currentDir + "/tmp_outputs/")
-    date_string = time.strftime("%Y-%m-%d-%H:%M:%S")
+    date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
     location_string = (
-        local_list[0] + '|' + local_list[1] + '-' + local_list[2] + '|' + local_list[3])
+        local_list[0] + '_' + local_list[1] + '-' + local_list[2] + '_' + local_list[3])
     date_location = date_string + '-' + location_string
     os.makedirs(mediaDir + "/StreetViewVideos/" + date_location, exist_ok=True)
     outputlocation.append(mediaDir + "/StreetViewVideos/" + date_location)
@@ -254,6 +255,49 @@ def get_locationInfo(start, end):
                      ['name'], end_info[0]['cc'], end_info[0]['name']]
 
     return location_info
+
+
+def construct_images(START, END, NUM_THREADS):
+    os.makedirs(os.path.join(currentDir, "tmp_outputs"), exist_ok=True)
+    start = START
+    end = END
+    print("Generating a drive time-lapse")
+    tmp_int = 0
+    position_string = ['left', 'center', 'right']
+    pitchs = [-10, 0, 9]
+    for _ in itertools.repeat(None, 3):
+        imageTops = streetview_thread(
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[0])
+        imageMiddles = streetview_thread(
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[1])
+        imageBottoms = streetview_thread(
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[2])
+        idx = 0
+        for image in imageTops:
+            filename = '{0}/tmp_outputs/{1}Top_{2}.jpg'.format(
+                currentDir, position_string[tmp_int], idx)
+            output = cv2.imread(image)
+            cv2.imwrite(filename, output)
+            idx += 1
+        idx = 0
+        for image in imageMiddles:
+            filename = '{0}/tmp_outputs/{1}Middle_{2}.jpg'.format(
+                currentDir, position_string[tmp_int], idx)
+            output = cv2.imread(image)
+            cv2.imwrite(filename, output)
+            idx += 1
+        idx = 0
+        for image in imageBottoms:
+            filename = '{0}/tmp_outputs/{1}Bottom_{2}.jpg'.format(
+                currentDir, position_string[tmp_int], idx)
+            output = cv2.imread(image)
+            cv2.imwrite(filename, output)
+            idx += 1
+
+        tmp_int += 1
+        if tmp_int == 3:
+            print("done!")
+            break
 
 
 def construct_video(START, END, NUM_THREADS):
