@@ -51,9 +51,9 @@ def main():
                 reroute_cprint=True,
             )
         ],
-        [sg.T("起點座標： ", font="Any 16"), sg.Input(
+        [sg.T("起點座標： ", font="Any 16"), sg.Input(sg.user_settings_get_entry('-START-', ''),
             key="-START-", focus=True, do_not_clear=True, font="Any 16")],
-        [sg.T("終點座標： ", font="Any 16"), sg.Input(
+        [sg.T("終點座標： ", font="Any 16"), sg.Input(sg.user_settings_get_entry('-END-', ''),
             key="-END-", focus=True, do_not_clear=True, font="Any 16")],
         [sg.T("半徑: ", font="Any 16"), sg.Input(
             sg.user_settings_get_entry('-RADIUS-', ''), key="-R-", focus=True, do_not_clear=True, font="Any 16")],
