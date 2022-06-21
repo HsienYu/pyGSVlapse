@@ -272,23 +272,26 @@ def construct_images(START, END, NUM_THREADS):
             build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[1])
         imageBottoms = streetview_thread(
             build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[2])
+        # top
         idx = 0
         for image in imageTops:
-            filename = '{0}/tmp_outputs/{1}Top_{2}.jpg'.format(
+            filename = '{0}/tmp_outputs/{1}_top_{2}.jpg'.format(
                 currentDir, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
             idx += 1
+        # middle
         idx = 0
         for image in imageMiddles:
-            filename = '{0}/tmp_outputs/{1}Middle_{2}.jpg'.format(
+            filename = '{0}/tmp_outputs/{1}_middle_{2}.jpg'.format(
                 currentDir, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
             idx += 1
+        # bottom
         idx = 0
         for image in imageBottoms:
-            filename = '{0}/tmp_outputs/{1}Bottom_{2}.jpg'.format(
+            filename = '{0}/tmp_outputs/{1}_bottom_{2}.jpg'.format(
                 currentDir, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
