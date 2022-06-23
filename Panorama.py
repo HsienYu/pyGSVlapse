@@ -42,6 +42,28 @@ class Stitcher:
     def __init__(self):
         pass
 
+    def concatenateList(self, images: list):
+        cnt = len(images)
+        if cnt == 0:
+            return None
+
+        result = images[0]
+        for i in range(0, cnt - 1):
+            result = np.concatenate([result, images[i+1]], axis=1)
+        return result
+
+    def stitchList(self, images: list):
+        cnt = len(images)
+        if cnt == 0:
+            return None
+
+        utils = Utils()
+        result = images[0]
+        for i in range(0, cnt - 1):
+            result = self.stitch([result, images[i+1]])
+            utils.autoCrop(result)
+        return result
+
     def stitch(self, images, ratio=0.75, reprojThresh=4.0, showMatches=False):
         # unpack the images, then detect keypoints and extract
         # local invariant descriptors from them

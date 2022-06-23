@@ -1,7 +1,8 @@
 from os import path
+
 from glob import glob
 import cv2
-from numpy import number
+from numpy import full, number
 
 from Panorama import Stitcher, Utils
 
@@ -26,32 +27,70 @@ def test():
     cv2.imwrite(output_file, utils.counterClockwiseRotate(result))
 
 
-def getNineGridImage(frame: number):
+def getNineGridImage(rootFolder: str, frame: number, ext: str = 'jpg'):
+    """
+    0 1 2
+    3 4 5
+    6 7 8
+    """
     definedPos = {
-        'left_top': 0,
-        'center_top': 1,
-        'right_top': 2,
-        'left_middle': 3,
-        'center_middle': 4,
-        'right_middle': 5,
-        'left_bottom': 6,
-        'center_bottom': 7,
-        'right_bottom': 8
+        0: 'left_top',
+        1: 'center_top',
+        2: 'right_top',
+        3: 'left_middle',
+        4: 'center_middle',
+        5: 'right_middle',
+        6: 'left_bottom',
+        7: 'center_bottom',
+        8: 'right_bottom',
     }
-    rootPath = r'E:/GMap/tmp_outputs/'
-    files = glob(rootPath+'*_0.jpg', recursive=False)
-    for f in files:
-        pos = path.basename(f)
-        pos = pos.removesuffix('_0.jpg')
-        if pos in definedPos:
-            print(definedPos[pos])
-        else:
-            print("Can not found {0}".format(pos))
-    print(len(files))
+
+    if not rootFolder.endswith('/'):
+        rootFolder = rootFolder + '/'
+
+    result = []
+    for key in definedPos:
+        fullPath = '{folder}{pos}_{frame}.{ext}'.format(
+            folder=rootFolder, pos=definedPos[key], frame=frame, ext=ext)
+        if path.exists(fullPath):
+            result.append(fullPath)
+
+    return result
+
+
+def stitchNineGridImage(input: list[str]):
+    if len(input) != 9:
+        return None
+
+    images = []
+    for path in input:
+        images.append(cv2.imread(path))
+
+    stitcher = Stitcher()
+    top = stitcher.concatenateList(images[0:3])
+    middle = stitcher.concatenateList(images[3:6])
+    bottom = stitcher.concatenateList(images[6:9])
+    # cv2.imwrite('./output/top.jpg', top)
+    # cv2.imwrite('./output/middle.jpg', middle)
+    # cv2.imwrite('./output/bottom.jpg', bottom)
+    imgT = utils.clockwiseRotate(top)
+    imgM = utils.clockwiseRotate(middle)
+    imgB = utils.clockwiseRotate(bottom)
+    result = stitcher.stitch([imgB, imgM])
+    result = utils.autoCrop(result)
+    result = stitcher.stitch([result, imgT])
+    result = utils.autoCrop(result)
+    result = utils.counterClockwiseRotate(result)
+
+    return result
 
 
 def main():
-    getNineGridImage(0)
+    path = r'D:/GMap/tmp_outputs/'
+    nine = getNineGridImage(path, 0)
+    # print(nine, len(nine))
+    img = stitchNineGridImage(nine)
+    # cv2.imwrite('./output.jpg', img)
 
 
 if __name__ == "__main__":

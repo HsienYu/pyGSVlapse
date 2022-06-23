@@ -264,14 +264,14 @@ def construct_images(START, END, NUM_THREADS):
     print("Generating a drive time-lapse")
     tmp_int = 0
     position_string = ['left', 'center', 'right']
-    pitchs = [-10, 0, 9]
+    pitchs = [-17, 0, 16]
     for _ in itertools.repeat(None, 3):
         imageTops = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[0])
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[2])
         imageMiddles = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[1])
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[1])
         imageBottoms = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=[2])
+            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[0])
         # top
         idx = 0
         for image in imageTops:
