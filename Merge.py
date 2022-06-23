@@ -1,3 +1,4 @@
+from os import path
 from glob import glob
 import cv2
 from numpy import number
@@ -26,10 +27,26 @@ def test():
 
 
 def getNineGridImage(frame: number):
-    rootPath = 'D:/GMap/tmp_outputs'
-    files = glob(rootPath, recursive=False)
+    definedPos = {
+        'left_top': 0,
+        'center_top': 1,
+        'right_top': 2,
+        'left_middle': 3,
+        'center_middle': 4,
+        'right_middle': 5,
+        'left_bottom': 6,
+        'center_bottom': 7,
+        'right_bottom': 8
+    }
+    rootPath = r'E:/GMap/tmp_outputs/'
+    files = glob(rootPath+'*_0.jpg', recursive=False)
     for f in files:
-        print(f)
+        pos = path.basename(f)
+        pos = pos.removesuffix('_0.jpg')
+        if pos in definedPos:
+            print(definedPos[pos])
+        else:
+            print("Can not found {0}".format(pos))
     print(len(files))
 
 
