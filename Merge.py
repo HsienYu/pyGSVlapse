@@ -1,3 +1,4 @@
+import os
 from os import path
 
 from glob import glob
@@ -27,7 +28,7 @@ def test():
     cv2.imwrite(output_file, utils.counterClockwiseRotate(result))
 
 
-def getNineGridImage(rootFolder: str, frame: number, ext: str = 'jpg'):
+def getNineGridImagePath(rootFolder: str, frame: number, ext: str = 'jpg'):
     """
     0 1 2
     3 4 5
@@ -85,11 +86,31 @@ def stitchNineGridImage(input: list[str]):
     return result
 
 
+def stitchNineGridImage2(input: list[str]):
+    imgs = []
+    for i in range(len(input)):
+        imgs.append(cv2.imread(input[i]))
+    stitcher = Stitcher()
+    top = stitcher.concatenateList(imgs[0:3])
+    middle = stitcher.concatenateList(imgs[3:6])
+    bottom = stitcher.concatenateList(imgs[6:9])
+    imgT = utils.clockwiseRotate(top)
+    imgM = utils.clockwiseRotate(middle)
+    imgB = utils.clockwiseRotate(bottom)
+    stitchy = cv2.Stitcher.create()
+    (dummy, output) = stitchy.stitch([imgT, imgM, imgB])
+    if dummy != cv2.STITCHER_OK:
+        return None
+    else:
+        return utils.counterClockwiseRotate(output)
+
+
 def main():
-    path = r'D:/GMap/tmp_outputs/'
-    nine = getNineGridImage(path, 0)
+    pass
+    # path = r'D:/GMap/tmp_outputs/'
+    # nine = getNineGridImage(path, 0)
     # print(nine, len(nine))
-    img = stitchNineGridImage(nine)
+    # img = stitchNineGridImage(nine)
     # cv2.imwrite('./output.jpg', img)
 
 

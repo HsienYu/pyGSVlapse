@@ -17,11 +17,11 @@ import shutil
 import threading
 import itertools
 import time
+from glob import glob
+from Merge import getNineGridImagePath, stitchNineGridImage, stitchNineGridImage2
 
-
-# currentDir = os.getcwd()  # os.path.dirname(__file__)
-currentDir = os.path.normpath(os.path.expanduser("D:/GMap"))
-mediaDir = os.path.normpath(os.path.expanduser("D:/GMap"))
+currentDir = os.getcwd()  # os.path.dirname(__file__)
+mediaDir = os.path.normpath(os.path.expanduser("~/Movies"))
 path_list = []
 clip_list = []
 
@@ -207,7 +207,7 @@ def make_stitchingVideo(path_List, save_path):
     final_clip.write_videofile(save_path + '/' + 'result.mp4')
     final_clip.close()
     clip_list.clear()
-    #crop(x1=0, y1=0, x2=1920, y2=600)
+    # crop(x1=0, y1=0, x2=1920, y2=600)
 
 
 def compare_frames(path_List):
@@ -257,14 +257,52 @@ def get_locationInfo(start, end):
     return location_info
 
 
+def generate_frames(srcFolder: str, destFolder: str):
+    print('Generating all frame')
+    files = glob('{0}/*.jpg'.format(srcFolder))
+    frameCnt = len(files)//9
+    idx = 0
+    for frame in range(0, frameCnt):
+        idx = idx + 1
+        imgPaths = getNineGridImagePath(rootFolder=srcFolder, frame=frame)
+        frameData = stitchNineGridImage2(input=imgPaths)
+        if frameData is not None:
+            filePath = '{0}/{1}.jpg'.format(destFolder, frame)
+            cv2.imwrite(filePath, frameData)
+            print('{0} / {1}'.format(idx, frameCnt))
+
+
+def get_key(fp):
+    filename = os.path.splitext(os.path.basename(fp))[0]
+    int_part = filename.split()[0]
+    return int(int_part)
+
+
+def generate_video_from_frames(srcFolder: str, destFolder: str, fps=30, size=(1920, 1200), is_color=True):
+    print('Generating video')
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    path = '{0}/video.mp4'.format(destFolder)
+    frames = sorted(glob('{0}/*.jpg'.format(srcFolder),
+                    recursive=False), key=get_key)
+
+    vid = cv2.VideoWriter(path, fourcc, fps, size, is_color)
+    for f in frames:
+        fData = cv2.imread(f)
+        fData = cv2.resize(fData, size, interpolation=cv2.INTER_LINEAR)
+        vid.write(fData)
+    vid.release()
+
+
 def construct_images(START, END, NUM_THREADS):
-    os.makedirs(os.path.join(currentDir, "tmp_outputs"), exist_ok=True)
+    rootFolder = os.path.join(currentDir, "tmp_outputs")
+    os.makedirs(rootFolder, exist_ok=True)
+
     start = START
     end = END
     print("Generating a drive time-lapse")
     tmp_int = 0
     position_string = ['left', 'center', 'right']
-    pitchs = [-17, 0, 16]
+    pitchs = [-15, 0, 15]
     for _ in itertools.repeat(None, 3):
         imageTops = streetview_thread(
             build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[2])
@@ -275,32 +313,36 @@ def construct_images(START, END, NUM_THREADS):
         # top
         idx = 0
         for image in imageTops:
-            filename = '{0}/tmp_outputs/{1}_top_{2}.jpg'.format(
-                currentDir, position_string[tmp_int], idx)
+            filename = '{0}/{1}_top_{2}.jpg'.format(
+                rootFolder, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
             idx += 1
         # middle
         idx = 0
         for image in imageMiddles:
-            filename = '{0}/tmp_outputs/{1}_middle_{2}.jpg'.format(
-                currentDir, position_string[tmp_int], idx)
+            filename = '{0}/{1}_middle_{2}.jpg'.format(
+                rootFolder, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
             idx += 1
         # bottom
         idx = 0
         for image in imageBottoms:
-            filename = '{0}/tmp_outputs/{1}_bottom_{2}.jpg'.format(
-                currentDir, position_string[tmp_int], idx)
+            filename = '{0}/{1}_bottom_{2}.jpg'.format(
+                rootFolder, position_string[tmp_int], idx)
             output = cv2.imread(image)
             cv2.imwrite(filename, output)
             idx += 1
 
         tmp_int += 1
         if tmp_int == 3:
-            print("done!")
             break
+    outputFolder = os.path.join(currentDir, "outputs")
+    os.makedirs(outputFolder, exist_ok=True)
+    generate_frames(srcFolder=rootFolder, destFolder=outputFolder)
+    generate_video_from_frames(srcFolder=outputFolder, destFolder=outputFolder)
+    print("done!")
 
 
 def construct_video(START, END, NUM_THREADS):
