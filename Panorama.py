@@ -6,28 +6,17 @@ class Utils:
     def __init__(self):
         pass
 
-    def autoCrop(self, inputImage, threshold=0):
+    def uniformSize(self, inputImage, margin=50, targetW=1920, targetH=1200):
+        # (x1,y1) as the top-left vertex and (x2,y2) as the bottom-right
+        # inputImage[y1:y2, x1:x2]
+
         h, w, _ = inputImage.shape
-        gray = cv2.cvtColor(inputImage, cv2.COLOR_BGR2GRAY)
-        ret, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
-        contours, hierarchy = cv2.findContours(
-            binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        for i in range(len(contours)):
-            cnt = contours[i]
-            area = cv2.contourArea(cnt)
-            if area < threshold:
-                cv2.drawContours(binary, [cnt], -1, 0, thickness=-1)
-                continue
-
-        edges_x, edges_y = np.where(binary == 255)
-        top = min(edges_x)
-        bottom = max(edges_x)
-        height = bottom - top
-        left = min(edges_y)
-        right = max(edges_y)
-        width = right - left
-        return inputImage[top:top + height, left:left + width]
+        y1 = margin
+        y2 = w - margin
+        x1 = margin
+        x2 = h - margin
+        cropImage = inputImage[y1:y2, x1:x2]
+        return cv2.resize(cropImage, (targetW, targetH), interpolation=cv2.INTER_LINEAR)
 
     def counterClockwiseRotate(self, inputImage):
         output = cv2.transpose(inputImage)

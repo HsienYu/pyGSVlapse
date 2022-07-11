@@ -1,31 +1,11 @@
-import os
 from os import path
 
-from glob import glob
 import cv2
-from numpy import full, number
+from numpy import number
 
 from Panorama import Stitcher, Utils
 
 utils = Utils()
-
-
-def test():
-    output_file = './tmp/output.jpg'
-    print("[INFO] loading images...")
-    imgT = cv2.imread('./tmp/top.png')
-    imgM = cv2.imread('./tmp/middle.png')
-    imgB = cv2.imread('./tmp/bottom.png')
-
-    stitcher = Stitcher()
-    imgT = utils.clockwiseRotate(imgT)
-    imgM = utils.clockwiseRotate(imgM)
-    imgB = utils.clockwiseRotate(imgB)
-    result = stitcher.stitch([imgB, imgM])
-    result = utils.autoCrop(result)
-    result = stitcher.stitch([result, imgT])
-    result = utils.autoCrop(result)
-    cv2.imwrite(output_file, utils.counterClockwiseRotate(result))
 
 
 def getNineGridImagePath(rootFolder: str, frame: number, ext: str = 'jpg'):
@@ -60,33 +40,6 @@ def getNineGridImagePath(rootFolder: str, frame: number, ext: str = 'jpg'):
 
 
 def stitchNineGridImage(input: list[str]):
-    if len(input) != 9:
-        return None
-
-    images = []
-    for path in input:
-        images.append(cv2.imread(path))
-
-    stitcher = Stitcher()
-    top = stitcher.concatenateList(images[0:3])
-    middle = stitcher.concatenateList(images[3:6])
-    bottom = stitcher.concatenateList(images[6:9])
-    # cv2.imwrite('./output/top.jpg', top)
-    # cv2.imwrite('./output/middle.jpg', middle)
-    # cv2.imwrite('./output/bottom.jpg', bottom)
-    imgT = utils.clockwiseRotate(top)
-    imgM = utils.clockwiseRotate(middle)
-    imgB = utils.clockwiseRotate(bottom)
-    result = stitcher.stitch([imgB, imgM])
-    result = utils.autoCrop(result)
-    result = stitcher.stitch([result, imgT])
-    result = utils.autoCrop(result)
-    result = utils.counterClockwiseRotate(result)
-
-    return result
-
-
-def stitchNineGridImage2(input: list[str]):
     imgs = []
     for i in range(len(input)):
         imgs.append(cv2.imread(input[i]))
@@ -102,17 +55,6 @@ def stitchNineGridImage2(input: list[str]):
     if dummy != cv2.STITCHER_OK:
         return None
     else:
-        return utils.counterClockwiseRotate(output)
-
-
-def main():
-    pass
-    # path = r'D:/GMap/tmp_outputs/'
-    # nine = getNineGridImage(path, 0)
-    # print(nine, len(nine))
-    # img = stitchNineGridImage(nine)
-    # cv2.imwrite('./output.jpg', img)
-
-
-if __name__ == "__main__":
-    main()
+        output = utils.counterClockwiseRotate(output)
+        output = utils.uniformSize(output)
+        return output

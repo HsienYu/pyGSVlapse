@@ -18,7 +18,8 @@ import threading
 import itertools
 import time
 from glob import glob
-from Merge import getNineGridImagePath, stitchNineGridImage, stitchNineGridImage2
+from Merge import getNineGridImagePath, stitchNineGridImage
+import shutil
 
 currentDir = os.getcwd()  # os.path.dirname(__file__)
 mediaDir = os.path.normpath(os.path.expanduser("~/Movies"))
@@ -152,6 +153,8 @@ def streetview_thread(coordinates, driveby="False", centercoord=(0, 0), height=0
         len(coordinates) if len(
             coordinates) < NumberOfThreads else NumberOfThreads
     )
+    # NumberOfThreads = len(coordinates)
+
     slicedlist = [
         coordinates[i: i + (len(coordinates) // NumberOfThreads) + 3]
         for i in range(0, len(coordinates), len(coordinates) // NumberOfThreads)
@@ -265,7 +268,7 @@ def generate_frames(srcFolder: str, destFolder: str):
     for frame in range(0, frameCnt):
         idx = idx + 1
         imgPaths = getNineGridImagePath(rootFolder=srcFolder, frame=frame)
-        frameData = stitchNineGridImage2(input=imgPaths)
+        frameData = stitchNineGridImage(input=imgPaths)
         if frameData is not None:
             filePath = '{0}/{1}.jpg'.format(destFolder, frame)
             cv2.imwrite(filePath, frameData)
@@ -295,51 +298,43 @@ def generate_video_from_frames(srcFolder: str, destFolder: str, fps=30, size=(19
 
 def construct_images(START, END, NUM_THREADS):
     rootFolder = os.path.join(currentDir, "tmp_outputs")
+    if os.path.isdir(rootFolder):
+        shutil.rmtree(rootFolder)
     os.makedirs(rootFolder, exist_ok=True)
+
+    outputFolder = os.path.join(currentDir, "outputs")
+    if os.path.isdir(outputFolder):
+        shutil.rmtree(outputFolder)
+    os.makedirs(outputFolder, exist_ok=True)
 
     start = START
     end = END
+    apiResult = get_result(_build_directions_url(start, end))
+    coords = build_coords(apiResult)
     print("Generating a drive time-lapse")
-    tmp_int = 0
     position_string = ['left', 'center', 'right']
     pitchs = [-15, 0, 15]
+    pitchName = ['bottom', 'middle', 'top']
+    pitchIdx = 0
     for _ in itertools.repeat(None, 3):
-        imageTops = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[2])
-        imageMiddles = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[1])
-        imageBottoms = streetview_thread(
-            build_coords(get_result(_build_directions_url(start, end))), position=tmp_int, pitch=pitchs[0])
-        # top
-        idx = 0
-        for image in imageTops:
-            filename = '{0}/{1}_top_{2}.jpg'.format(
-                rootFolder, position_string[tmp_int], idx)
-            output = cv2.imread(image)
-            cv2.imwrite(filename, output)
-            idx += 1
-        # middle
-        idx = 0
-        for image in imageMiddles:
-            filename = '{0}/{1}_middle_{2}.jpg'.format(
-                rootFolder, position_string[tmp_int], idx)
-            output = cv2.imread(image)
-            cv2.imwrite(filename, output)
-            idx += 1
-        # bottom
-        idx = 0
-        for image in imageBottoms:
-            filename = '{0}/{1}_bottom_{2}.jpg'.format(
-                rootFolder, position_string[tmp_int], idx)
-            output = cv2.imread(image)
-            cv2.imwrite(filename, output)
-            idx += 1
-
-        tmp_int += 1
-        if tmp_int == 3:
+        tmpPos = 0
+        for _ in itertools.repeat(None, 3):
+            images = streetview_thread(
+                coords, position=tmpPos, pitch=pitchs[pitchIdx])
+            idx = 0
+            for image in images:
+                filename = '{0}/{1}_{2}_{3}.jpg'.format(
+                    rootFolder, position_string[tmpPos], pitchName[pitchIdx], idx)
+                output = cv2.imread(image)
+                cv2.imwrite(filename, output)
+                idx += 1
+            tmpPos += 1
+            if tmpPos == 3:
+                break
+        pitchIdx += 1
+        if pitchIdx == 3:
             break
-    outputFolder = os.path.join(currentDir, "outputs")
-    os.makedirs(outputFolder, exist_ok=True)
+
     generate_frames(srcFolder=rootFolder, destFolder=outputFolder)
     generate_video_from_frames(srcFolder=outputFolder, destFolder=outputFolder)
     print("done!")
